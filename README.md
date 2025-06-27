@@ -1,22 +1,44 @@
-## Запуск с Docker
+## Тестовое задание
 
-1. Клонируйте репозиторий
+## Технологии
+
+- Laravel 11
+- Vue 3
+- MySQL 8.0
+- Redis (для очередей)
+- Docker
+- Nginx
+
+## Установка и запуск
+
+1. Склонируйте репозиторий
 ```bash
 git clone git@github.com:VoronVoronov/tz.git
-cd tz
 ```
 
-2. Скопируйте .env.example в .env и настройте переменные окружения
+2. Скопируйте .env.example в .env
 ```bash
 cp .env.example .env
 ```
 
 3. Запустите контейнеры
 ```bash
-docker compose up -d
+docker compose up -d --build
 ```
 
-Все зависимости будут установлены автоматически, миграции выполнены, и фронтенд собран при первом запуске контейнеров.
+При первом запуске автоматически:
+- Установятся все зависимости PHP и Node.js
+- Создадутся таблицы в базе данных
+- Настроится Laravel Passport для API аутентификации
+- Соберется фронтенд
+- Запустится очередь для обработки операций с балансом
+
+## Сервисы
+
+- Frontend: http://localhost:5173
+- Backend API: http://localhost:80
+- MySQL: localhost:3306
+- Redis: localhost:6379
 
 ## Команды
 
@@ -25,7 +47,7 @@ docker compose up -d
 docker compose exec php php artisan user:create dastan dastan@zholdas.icu admin
 ```
 
-Управление балансом:
+Управление балансом (через очередь):
 ```bash
 # Пополнение
 docker compose exec php php artisan balance:manage dastan@zholdas.icu 100 "Add Balance"
@@ -34,18 +56,45 @@ docker compose exec php php artisan balance:manage dastan@zholdas.icu 100 "Add B
 docker compose exec php php artisan balance:manage dastan@zholdas.icu 10 "Add Balance" --action=withdraw
 ```
 
-## Сервисы
+## Структура проекта
 
-- Frontend: http://localhost
-- База данных: PostgreSQL (порт 5432)
-- Redis для очередей: порт 6379
-- Queue Worker для обработки транзакций
+- `app/` - Код приложения
+  - `Services/` - Бизнес-логика
+  - `Repositories/` - Работа с данными
+  - `Jobs/` - Задачи для очереди
+- `docker/` - Конфигурация Docker
+  - `php/` - PHP и Laravel
+  - `node/` - Node.js и Vue
+  - `nginx/` - Веб-сервер
+- `resources/js/` - Vue компоненты
 
-## Структура Docker
+## Сервисы Docker
 
-- `nginx` - веб-сервер
+- `nginx` - Nginx веб-сервер (порт 80)
+  - Проксирует запросы к PHP-FPM
+  - Обслуживает статические файлы
+
 - `php` - PHP-FPM для бэкенда
-- `frontend` - Node.js для сборки фронтенда
-- `postgres` - база данных
-- `redis` - для очередей
+  - PHP 8.2 с необходимыми расширениями
+  - Composer для управления зависимостями
+  - Laravel приложение
+
+- `frontend` - Node.js для фронтенда (порт 5173)
+  - Node.js 20 для сборки Vue.js
+  - Hot-reload в режиме разработки
+  - Vite для сборки
+
+- `mysql` - MySQL 8.0 (порт 3306)
+  - Хранение данных в volume mysql_data
+  - Пользователи, балансы, транзакции
+  - Таблицы для Laravel Passport
+
+- `redis` - Redis для очередей (порт 6379)
+  - Хранение данных в volume redis_data
+  - Обработка асинхронных операций
+
+- `queue` - Laravel Queue Worker
+  - Обработка операций с балансом
+  - Использует Redis как драйвер очередей
+  - Автоматический перезапуск при ошибках
 - `queue` - обработчик очередей Laravel
