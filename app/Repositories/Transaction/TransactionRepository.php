@@ -37,7 +37,7 @@ final class TransactionRepository implements TransactionRepositoryInterface
             $query->where('description', 'like', '%' . $filters['search'] . '%');
         }
 
-        $perPage = $limit ?? 1;
+        $perPage = $limit ?? 10;
         return $query->paginate($perPage);
     }
 }
