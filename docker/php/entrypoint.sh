@@ -6,10 +6,16 @@ php artisan key:generate --no-interaction --force
 
 php artisan migrate:fresh --force
 
-php artisan passport:install --force
+php artisan passport:keys --force
 
-if [ ! -f /var/www/storage/oauth-private.key ]; then
-    php artisan passport:keys --force
-fi
+php artisan passport:client --personal --name="Personal Access Client" --no-interaction
+php artisan passport:client --password --name="Password Grant Client" --no-interaction
 
-php-fpm
+case "$*" in
+    *queue:work*)
+        exec "$@"
+        ;;
+    *)
+        exec php-fpm
+        ;;
+esac

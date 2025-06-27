@@ -70,7 +70,8 @@ services:
       context: .
       dockerfile: docker/php/Dockerfile
     container_name: tz_queue
-    command: php artisan queue:work
+    user: dev
+    command: ["php", "artisan", "queue:work", "redis", "--tries=3", "--timeout=90", "--sleep=3"]
     volumes:
       - ./:/var/www
     depends_on:
